@@ -31,13 +31,25 @@ const videoAreaRef = ref(null)
 const videoEl = computed(() => videoAreaRef.value?.videoEl ?? null)
 
 defineExpose({ videoEl })
+
+const dragFromHandle = ref(false)
+
+function onMouseDown(e) {
+  dragFromHandle.value = e.composedPath().some(el => el.classList?.contains('drag-handle'))
+}
+
+function onDragStart(e) {
+  if (!dragFromHandle.value) { e.preventDefault(); return }
+  emit('dragstart', e)
+}
 </script>
 
 <template>
   <div
     class="card panel"
     draggable="true"
-    @dragstart="emit('dragstart', $event)"
+    @mousedown="onMouseDown"
+    @dragstart="onDragStart"
     @dragover.prevent="emit('dragover', $event)"
     @drop.prevent="emit('drop', $event)"
     @dragend="emit('dragend', $event)"

@@ -15,6 +15,7 @@ const settingsOpen = ref(false)
 const rootEl = ref(null)
 
 useClickOutside(rootEl, () => { settingsOpen.value = false })
+
 </script>
 
 <template>
