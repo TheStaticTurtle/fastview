@@ -7,14 +7,16 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
 const gitHash = execSync('git rev-parse --short HEAD').toString().trim()
-const { homepage, license } = JSON.parse(readFileSync('./package.json', 'utf-8'))
+const { homepage, license, description } = JSON.parse(readFileSync('./package.json', 'utf-8'))
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/fastview/',
   define: {
     __GIT_HASH__: JSON.stringify(gitHash),
     __PROJECT_URL__: JSON.stringify(homepage),
     __LICENSE__: JSON.stringify(license),
+    __DESCRIPTION__: JSON.stringify(description),
   },
   plugins: [
     vue(),
@@ -28,7 +30,7 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `@import "@/styles/variables";\n@import "@/styles/mixins";\n`,
+        additionalData: `@use "@/assets/styles/variables" as *;\n@use "@/assets/styles/mixins" as *;\n`,
       },
     },
   },

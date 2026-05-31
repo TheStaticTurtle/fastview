@@ -1,6 +1,6 @@
 {
   "name": "fastview",
-  "description": "Very simple in-browser multiview vidoe player",
+  "description": "A very simple in-browser multiview video player for easy multicam review",
   "private": true,
   "type": "module",
   "license": "MIT",

@@ -1,9 +1,12 @@
 <script setup>
+import AppIcon from '@/components/icons/AppIcon.vue'
+
 const emit = defineEmits(['close'])
 
 const GIT_HASH = __GIT_HASH__
 const PROJECT_URL = __PROJECT_URL__
 const LICENSE = __LICENSE__
+const DESCRIPTION = __DESCRIPTION__
 </script>
 
 <template>
@@ -16,6 +19,12 @@ const LICENSE = __LICENSE__
         </div>
 
         <div class="modal-body">
+          <div class="app-identity">
+            <AppIcon style="width:72px;height:72px;padding:2px" />
+            <span class="app-name">FastView</span>
+            <span class="app-description">{{ DESCRIPTION }}</span>
+          </div>
+
           <section>
             <h3>Loading videos</h3>
             <p>Click the empty panel area, or drag &amp; drop a video file onto it to load a video. Double-click a loaded panel to replace its video. Each panel holds one video file.</p>
@@ -114,6 +123,26 @@ const LICENSE = __LICENSE__
   font-size: $font-size-lg;
   font-weight: 600;
   color: $text-primary;
+}
+
+.app-identity {
+  @include flex-center;
+  flex-direction: column;
+  gap: $space-4;
+  padding: $space-6 0;
+}
+
+.app-description {
+  font-size: $font-size-md;
+  color: $text-muted;
+  text-align: center;
+}
+
+.app-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: $text-primary;
+  letter-spacing: 0.04em;
 }
 
 .close-btn {

@@ -1,8 +1,8 @@
 <script setup>
-import PlayIcon from './icons/PlayIcon.vue'
-import PauseIcon from './icons/PauseIcon.vue'
-import MinusIcon from './icons/MinusIcon.vue'
-import PlusIcon from './icons/PlusIcon.vue'
+import PlayIcon from '../icons/PlayIcon.vue'
+import PauseIcon from '../icons/PauseIcon.vue'
+import MinusIcon from '../icons/MinusIcon.vue'
+import PlusIcon from '../icons/PlusIcon.vue'
 
 defineProps({
   isPlaying: { type: Boolean, default: false },

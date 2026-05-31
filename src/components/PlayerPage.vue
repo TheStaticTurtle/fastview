@@ -1,9 +1,10 @@
 <script setup>
 import { ref, computed, nextTick, onUnmounted } from 'vue'
-import VideoPanel from './VideoPanel.vue'
-import TransportBar from './TransportBar.vue'
+import VideoPanel from './panel/VideoPanel.vue'
+import TransportBar from './transport/TransportBar.vue'
 import FileMenu from './FileMenu.vue'
 import HelpModal from './HelpModal.vue'
+import AppIcon from "@/components/icons/AppIcon.vue";
 
 // ── panel state ───────────────────────────────────────────────────────────────
 
@@ -298,6 +299,9 @@ const helpOpen = ref(false)
 <template>
   <div class="player">
     <div class="topbar">
+        <AppIcon style="max-height:24px;width:auto"/>
+      <span class="app-title">FastView</span>
+      <span class="topbar-divider"></span>
       <FileMenu :panel-count="panels.length" @add-panel="addPanel" @export-layout="exportLayout" @import-layout="importLayout" />
       <button class="btn btn--sm topbar-right" @click="helpOpen = true">Help</button>
     </div>
@@ -365,6 +369,21 @@ const helpOpen = ref(false)
   border-bottom: 1px solid $border-subtle;
   min-height: 36px;
   flex-shrink: 0;
+}
+
+.topbar-divider {
+  width: 1px;
+  align-self: stretch;
+  background: $border-subtle;
+  margin: 4px 0;
+}
+
+.app-title {
+  font-size: $font-size-lg;
+  font-weight: 600;
+  color: $text-primary;
+  letter-spacing: 0.04em;
+  user-select: none;
 }
 
 .topbar-right {

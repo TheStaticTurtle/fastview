@@ -1,8 +1,8 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import PanelSettingsMenu from './PanelSettingsMenu.vue'
-import DragHandleIcon from './icons/DragHandleIcon.vue'
-import CloseIcon from './icons/CloseIcon.vue'
+import DragHandleIcon from '../icons/DragHandleIcon.vue'
+import CloseIcon from '../icons/CloseIcon.vue'
 
 const props = defineProps({
   name:      { type: String,  required: true },

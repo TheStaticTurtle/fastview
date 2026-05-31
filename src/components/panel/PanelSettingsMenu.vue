@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import SettingsIcon from './icons/SettingsIcon.vue'
+import SettingsIcon from '../icons/SettingsIcon.vue'
 import { useClickOutside } from '@/composables/useClickOutside'
 
 const props = defineProps({

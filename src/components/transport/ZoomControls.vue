@@ -1,5 +1,5 @@
 <script setup>
-import MagnifierIcon from './icons/MagnifierIcon.vue'
+import MagnifierIcon from '../icons/MagnifierIcon.vue'
 
 defineProps({
   zoomActive: { type: Boolean, default: false },
