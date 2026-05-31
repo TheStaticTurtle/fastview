@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import VideoPanel from './VideoPanel.vue'
 import TransportBar from './TransportBar.vue'
 
@@ -86,11 +86,23 @@ function onEnded() {
 
 // ── file loading ──────────────────────────────────────────────────────────────
 
-function onFileLoad(i, file) {
+async function onFileLoad(i, file) {
   const p = panels.value[i]
   if (p.src) URL.revokeObjectURL(p.src)
   p.src      = URL.createObjectURL(file)
   p.filename = file.name
+
+  await nextTick()
+  const el = videoEl(i)
+  if (!el) return
+
+  el.addEventListener('loadedmetadata', () => {
+    const isPrimary = i === primaryIdx.value
+    if (isPrimary) duration.value = el.duration
+    const target = isPrimary ? currentTime.value : Math.max(0, currentTime.value + p.offset)
+    el.currentTime = target
+    if (isPlaying.value) el.play().catch(() => {})
+  }, { once: true })
 }
 
 // ── offset ────────────────────────────────────────────────────────────────────
