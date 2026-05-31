@@ -202,6 +202,60 @@ function seekTo(t) {
 
 function onSkip(delta) { seekTo(currentTime.value + delta) }
 
+// ── layout export / import ────────────────────────────────────────────────────
+
+function exportLayout() {
+  const layout = {
+    currentTime: currentTime.value,
+    panels: panels.value.map(p => ({
+      name:      p.name,
+      isPrimary: p.isPrimary,
+      hasSound:  p.hasSound,
+      offset:    p.offset,
+    })),
+  }
+  const blob = new Blob([JSON.stringify(layout, null, 2)], { type: 'application/json' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href     = url
+  a.download = 'layout.json'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function importLayout(layout) {
+  if (!Array.isArray(layout?.panels) || layout.panels.length === 0) return
+  const count = Math.min(layout.panels.length, 9)
+
+  // Revoke old blob URLs
+  panels.value.forEach(p => { if (p.src) URL.revokeObjectURL(p.src) })
+
+  // Ensure exactly one primary and one sound
+  let primarySet = false
+  let soundSet   = false
+  const newPanels = layout.panels.slice(0, count).map((p, i) => {
+    const isPrimary = p.isPrimary && !primarySet ? (primarySet = true, true) : false
+    const hasSound  = p.hasSound  && !soundSet  ? (soundSet  = true, true) : false
+    return {
+      id:        nextId++,
+      name:      p.name   ?? `Video ${i + 1}`,
+      isPrimary,
+      hasSound,
+      src:       null,
+      offset:    p.offset ?? 0,
+    }
+  })
+  if (!primarySet) newPanels[0].isPrimary = true
+  if (!soundSet)   newPanels[0].hasSound  = true
+
+  panels.value    = newPanels
+  panelRefs.value = []
+  isPlaying.value = false
+  stopSyncLoop()
+  duration.value    = 0
+  currentTime.value = layout.currentTime ?? 0
+}
+
 // ── drag to reorder ───────────────────────────────────────────────────────────
 
 const dragSrcIdx = ref(null)
@@ -241,7 +295,7 @@ const zoomRadius = ref(80)
 <template>
   <div class="player">
     <div class="topbar">
-      <FileMenu :panel-count="panels.length" @add-panel="addPanel" />
+      <FileMenu :panel-count="panels.length" @add-panel="addPanel" @export-layout="exportLayout" @import-layout="importLayout" />
     </div>
 
     <div class="panels" :style="{ '--cols': gridCols }">

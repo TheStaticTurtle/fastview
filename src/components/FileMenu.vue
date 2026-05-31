@@ -8,12 +8,32 @@ const props = defineProps({
   panelCount: { type: Number, default: 1 },
 })
 
-const emit = defineEmits(['add-panel'])
+const emit = defineEmits(['add-panel', 'export-layout', 'import-layout'])
 
-const menuOpen = ref(false)
-const rootEl   = ref(null)
+const menuOpen  = ref(false)
+const rootEl    = ref(null)
+const importRef = ref(null)
 
 useClickOutside(rootEl, () => { menuOpen.value = false })
+
+function triggerImport() {
+  menuOpen.value = false
+  importRef.value.click()
+}
+
+function onImportFile(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = ev => {
+    try {
+      const layout = JSON.parse(ev.target.result)
+      emit('import-layout', layout)
+    } catch {}
+  }
+  reader.readAsText(file)
+  e.target.value = ''
+}
 </script>
 
 <template>
@@ -30,7 +50,15 @@ useClickOutside(rootEl, () => { menuOpen.value = false })
         <PlusIcon class="item-icon" /> Add panel
         <span class="item-hint">{{ panelCount }} / 9</span>
       </button>
+      <div class="dropdown-divider" />
+      <button class="dropdown-item" @click="emit('export-layout'); menuOpen = false">
+        Export layout
+      </button>
+      <button class="dropdown-item" @click="triggerImport">
+        Import layout
+      </button>
     </div>
+    <input ref="importRef" type="file" accept=".json" style="display:none" @change="onImportFile" />
   </div>
 </template>
 
@@ -60,5 +88,11 @@ useClickOutside(rootEl, () => { menuOpen.value = false })
   left: 0;
   min-width: 180px;
   z-index: $z-menu;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: $border-subtle;
+  margin: $space-1 0;
 }
 </style>
