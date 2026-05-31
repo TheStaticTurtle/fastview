@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import SettingsIcon from './icons/SettingsIcon.vue'
 
 const props = defineProps({
   name:       { type: String,  required: true },
@@ -19,6 +20,7 @@ const emit = defineEmits([
   'update:offset',
   'loadedmetadata',
   'ended',
+  'dragstart', 'dragover', 'drop', 'dragend',
   'set-primary',
   'set-sound',
   'update:name',
@@ -27,10 +29,24 @@ const emit = defineEmits([
 
 // ── video + canvas refs ───────────────────────────────────────────────────────
 
-const videoEl  = ref(null)
-const canvasEl = ref(null)
+const videoEl   = ref(null)
+const canvasEl  = ref(null)
 const wrapperEl = ref(null)
+const fileInput = ref(null)
 defineExpose({ videoEl })
+
+// ── settings menu ────────────────────────────────────────────────────────────
+
+const settingsOpen = ref(false)
+const settingsRoot = ref(null)
+
+function onDocClick(e) {
+  if (settingsRoot.value && !settingsRoot.value.contains(e.target)) {
+    settingsOpen.value = false
+  }
+}
+onMounted(()   => document.addEventListener('mousedown', onDocClick))
+// onUnmounted listener added below alongside magnifier cleanup
 
 // ── name editing ──────────────────────────────────────────────────────────────
 
@@ -172,12 +188,24 @@ onMounted(() => {
   ro = new ResizeObserver(syncCanvasSize)
   ro.observe(canvasEl.value)
 })
-onUnmounted(() => { ro?.disconnect(); stopLoop() })
+onUnmounted(() => {
+  ro?.disconnect()
+  stopLoop()
+  document.removeEventListener('mousedown', onDocClick)
+})
 </script>
 
 <template>
-  <div class="panel">
-    <div class="panel-header">
+  <div
+    class="panel"
+    draggable="true"
+    @dragstart="emit('dragstart', $event)"
+    @dragover.prevent="emit('dragover', $event)"
+    @drop.prevent="emit('drop', $event)"
+    @dragend="emit('dragend', $event)"
+  >
+    <div class="panel-header" :class="{ 'header--primary': isPrimary, 'header--sound': hasSound && !isPrimary, 'header--both': isPrimary && hasSound }">
+      <span class="drag-handle" title="Drag to reorder">⠿</span>
       <input
         v-if="editing"
         ref="nameInput"
@@ -189,16 +217,40 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
       />
       <span v-else class="panel-label" title="Click to rename" @click="startEdit">{{ name }}</span>
       <div class="header-actions">
-        <button
-          class="badge-btn primary-btn" :class="{ active: isPrimary }"
-          :title="isPrimary ? 'Sync master' : 'Set as sync master'"
-          @click="emit('set-primary')"
-        >primary</button>
-        <button
-          class="badge-btn sound-btn" :class="{ active: hasSound }"
-          :title="hasSound ? 'Sound source' : 'Switch sound here'"
-          @click="emit('set-sound')"
-        >audio</button>
+        <div ref="settingsRoot" class="settings-root">
+          <button
+            class="settings-btn" :class="{ open: settingsOpen }"
+            title="Panel settings"
+            @click="settingsOpen = !settingsOpen"
+          >
+            <SettingsIcon class="settings-icon" />
+          </button>
+          <div v-if="settingsOpen" class="settings-dropdown">
+            <div class="settings-row">
+              <span class="settings-label">Primary</span>
+              <button
+                class="badge-btn primary-btn" :class="{ active: isPrimary }"
+                @click="emit('set-primary')"
+              >{{ isPrimary ? 'active' : 'set' }}</button>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">Audio</span>
+              <button
+                class="badge-btn sound-btn" :class="{ active: hasSound }"
+                @click="emit('set-sound')"
+              >{{ hasSound ? 'active' : 'set' }}</button>
+            </div>
+            <div class="settings-row settings-row--offset">
+              <span class="settings-label">Offset (s)</span>
+              <input
+                type="number" class="settings-offset-input"
+                :value="offset" step="0.1"
+                :disabled="isPrimary"
+                @change="emit('update:offset', parseFloat($event.target.value))"
+              />
+            </div>
+          </div>
+        </div>
         <button v-if="removable" class="remove-btn" title="Remove panel" @click="emit('remove')">✕</button>
       </div>
     </div>
@@ -210,10 +262,15 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
         :muted="!hasSound"
         class="video"
         preload="metadata"
+        @dblclick="src ? fileInput.click() : undefined"
         @loadedmetadata="emit('loadedmetadata', $event)"
         @ended="emit('ended', $event)"
       />
-      <div v-if="!src" class="placeholder">No file loaded</div>
+      <label v-if="!src" class="load-overlay">
+        <span class="load-overlay-text">Click to load video</span>
+        <input ref="fileInput" type="file" accept="video/*" @change="onFileChange" hidden />
+      </label>
+      <input v-else ref="fileInput" type="file" accept="video/*" @change="onFileChange" hidden />
       <canvas
         ref="canvasEl"
         class="magnifier-canvas"
@@ -223,23 +280,8 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
       />
     </div>
 
-    <div class="panel-footer">
-      <label class="btn load-btn">
-        Load file
-        <input type="file" accept="video/*" @change="onFileChange" hidden />
-      </label>
-
-      <div v-if="!isPrimary" class="offset-row">
-        <span class="offset-label">Offset</span>
-        <input
-          type="number" class="offset-input"
-          :value="offset" step="0.1"
-          @change="emit('update:offset', parseFloat($event.target.value))"
-        />
-        <span class="offset-unit">s</span>
-      </div>
-    </div>
   </div>
+
 </template>
 
 <style scoped>
@@ -260,7 +302,22 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
   border-bottom: 1px solid #333;
   min-height: 28px;
   flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s;
 }
+.header--primary  { background: #1a2e4a; border-color: #1e3f6a; }
+.header--sound    { background: #1a2e1a; border-color: #1e4a1e; }
+.header--both     { background: #1a2a3a; border-color: #1e3a4a; }
+
+.drag-handle {
+  font-size: 14px;
+  color: #444;
+  cursor: grab;
+  user-select: none;
+  padding: 0 2px;
+  line-height: 1;
+}
+.drag-handle:hover { color: #777; }
+.panel:active .drag-handle { cursor: grabbing; }
 
 .panel-label {
   font-size: 10px;
@@ -349,15 +406,26 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
   object-fit: contain;
 }
 
-.placeholder {
+.load-overlay {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #3a3a3a;
-  font-size: 13px;
-  pointer-events: none;
+  cursor: pointer;
+}
+
+.load-overlay-text {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px dashed #333;
+  color: #444;
+  font-size: 12px;
+  transition: border-color 0.15s, color 0.15s;
+}
+.load-overlay:hover .load-overlay-text {
+  border-color: #666;
+  color: #999;
 }
 
 .magnifier-canvas {
@@ -372,51 +440,77 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
   cursor: crosshair;
 }
 
-.panel-footer {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 5px 10px;
-  background: #1e1e1e;
-  border-top: 1px solid #2a2a2a;
-  flex-shrink: 0;
-  min-height: 38px;
+
+/* ── settings menu ── */
+.settings-root {
+  position: relative;
 }
 
-.btn {
-  background: #2c2c2c;
-  color: #ccc;
-  border: 1px solid #3a3a3a;
-  border-radius: 5px;
+.settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
   cursor: pointer;
-  font-size: 12px;
-  padding: 3px 10px;
-  transition: background 0.12s, color 0.12s;
-  white-space: nowrap;
+  padding: 2px 3px;
+  color: #555;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
 }
-.btn:hover { background: #3a3a3a; color: #fff; }
+.settings-btn:hover { color: #aaa; background: #2a2a2a; }
+.settings-btn.open  { color: #ccc; background: #2a2a2a; }
 
-.offset-row {
+.settings-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.settings-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 170px;
+  background: #222;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  padding: 6px;
+  z-index: 50;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-row {
   display: flex;
   align-items: center;
-  gap: 5px;
-  margin-left: auto;
+  justify-content: space-between;
+  padding: 5px 8px;
+  border-radius: 4px;
+  gap: 12px;
 }
-.offset-label { font-size: 11px; color: #666; }
-.offset-input {
-  width: 62px;
+.settings-row:hover { background: #2a2a2a; }
+
+.settings-label {
+  font-size: 12px;
+  color: #888;
+}
+
+.settings-offset-input {
+  width: 68px;
   background: #2c2c2c;
   border: 1px solid #3a3a3a;
   border-radius: 4px;
   color: #e8e8e8;
-  font-size: 13px;
-  padding: 2px 5px;
+  font-size: 12px;
+  padding: 3px 6px;
   text-align: right;
   outline: none;
   -moz-appearance: textfield;
 }
-.offset-input:focus { border-color: #555; }
-.offset-input::-webkit-outer-spin-button,
-.offset-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-.offset-unit { font-size: 11px; color: #555; }
+.settings-offset-input:focus { border-color: #555; }
+.settings-offset-input:disabled { opacity: 0.35; cursor: not-allowed; }
+.settings-offset-input::-webkit-outer-spin-button,
+.settings-offset-input::-webkit-inner-spin-button { -webkit-appearance: none; }
 </style>

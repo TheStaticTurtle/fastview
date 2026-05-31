@@ -36,6 +36,27 @@ function onSeekStart()  { isSeeking.value = true }
 function onSeekInput(e) { emit('seek', parseFloat(e.target.value)) }
 function onSeekEnd(e)   { emit('seek', parseFloat(e.target.value)); isSeeking.value = false }
 
+// ── go-to input ───────────────────────────────────────────────────────────────
+
+const gotoValue = ref('')
+
+function parseGoto(str) {
+  const s = str.trim()
+  if (!s) return null
+  // h:mm:ss or m:ss
+  const parts = s.split(':').map(Number)
+  if (parts.some(isNaN)) return null
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+  if (parts.length === 2) return parts[0] * 60 + parts[1]
+  return parts[0]
+}
+
+function onGotoCommit() {
+  const t = parseGoto(gotoValue.value)
+  if (t !== null) emit('seek', t)
+  gotoValue.value = ''
+}
+
 defineExpose({ isSeeking })
 </script>
 
@@ -45,6 +66,7 @@ defineExpose({ isSeeking })
       <span class="time-label">{{ fmt(currentTime) }}</span>
       <div class="seekbar-track">
         <div class="seekbar-fill" :style="{ width: seekPct + '%' }" />
+        <div class="seekbar-ball" :style="{ left: seekPct + '%' }" />
         <input
           type="range" class="seekbar"
           min="0" :max="duration || 100" step="0.05"
@@ -58,6 +80,15 @@ defineExpose({ isSeeking })
     </div>
 
     <div class="bottom-row">
+      <!-- go-to input (left) -->
+      <input
+        class="goto-input"
+        v-model="gotoValue"
+        placeholder="go to…"
+        @keydown.enter="onGotoCommit"
+        @blur="onGotoCommit"
+      />
+
       <!-- playback controls (centred) -->
       <div class="btn-row">
         <button class="btn skip-btn" @click="emit('skip', -30)">−30s</button>
@@ -119,6 +150,20 @@ defineExpose({ isSeeking })
   padding-bottom: 18px;
 }
 
+.goto-input {
+  width: 72px;
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 11px;
+  padding: 3px 7px;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+}
+.goto-input::placeholder { color: #444; }
+.goto-input:focus { border-color: #555; color: #e8e8e8; }
+
 .time-label {
   font-size: 12px;
   color: #888;
@@ -142,6 +187,23 @@ defineExpose({ isSeeking })
   background: #4a9eff;
   border-radius: 2px;
   pointer-events: none;
+}
+
+.seekbar-ball {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  transition: transform 0.1s;
+}
+
+.seekbar-track:hover .seekbar-ball {
+  transform: translate(-50%, -50%) scale(1.25);
 }
 
 .seekbar {

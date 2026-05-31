@@ -16,48 +16,71 @@ No test runner or linter is configured yet.
 ## Stack
 
 - **Vue 3** with `<script setup>` SFCs
-- **Vite 8** as bundler/dev server, configured in [vite.config.js](vite.config.js)
+- **Vite 8** as bundler/dev server (`vite.config.js`)
 - `@` alias resolves to `src/`
 - Vue Devtools plugin enabled in dev mode
 
-## Structure
+## Component map
 
 ```
-src/
-  main.js                        # mounts App to #app
-  App.vue                        # phase switch: 'setup' | 'player'
-  components/
-    SetupPage.vue                # landing form — video count, names, order, primary, sound
-    PlayerPage.vue               # player layout + all sync/playback logic
-    VideoPanel.vue               # single video tile with magnifier canvas overlay
-    TransportBar.vue             # seekbar, skip buttons, zoom controls
-  assets/
-    base.css                     # CSS variables + reset
-    main.css                     # html/body/app full-height reset
+App.vue                  — thin root, just mounts PlayerPage
+components/
+  PlayerPage.vue         — all player state + logic
+  VideoPanel.vue         — single video tile (video element + magnifier canvas)
+  TransportBar.vue       — seekbar, skip buttons, zoom controls
 ```
 
 ## Architecture
 
-### Phase flow
-`App.vue` holds a `phase` ref (`'setup'` | `'player'`). `SetupPage` emits `launch(configs)` with a sorted array of video config objects; `App` passes them to `PlayerPage` as `:configs`.
+### Startup
+App starts with a single panel `{ id:0, name:'Video 1', isPrimary:true, hasSound:true }`. Panels can be added (＋, max 9) or removed (✕ per panel, min 1) at runtime.
 
-### Video config shape
+### Panel object shape
 ```js
-{ id, name, order, isPrimary, hasSound }   // from SetupPage
-// PlayerPage adds:
-{ src, filename, offset }
+{
+  id:        Number,   // stable key for v-for
+  name:      String,   // editable display label; set to filename (sans ext) on file load
+  isPrimary: Boolean,  // exactly one panel is primary at all times
+  hasSound:  Boolean,  // exactly one panel is unmuted at all times
+  src:       String,   // blob URL, or null
+  filename:  String,   // original File.name, or null
+  offset:    Number,   // seconds; side videos play at primaryTime + offset
+}
 ```
 
-### Sync model
-- **Primary video** (chosen in setup) is the sync master — its `timeupdate` drives `currentTime` and the seekbar.
-- Non-primary videos are kept in sync by seeking them to `primaryTime + offset` whenever drift exceeds 0.25 s.
-- Only the video with `hasSound = true` is unmuted; all others have `:muted="true"`. Sound source can be switched at runtime by clicking the 🔊/🔇 button in any panel header.
-
 ### Video element access
-`VideoPanel` exposes `videoEl` via `defineExpose`. `PlayerPage` keeps a `panelRefs` array populated with `:ref="el => setRef(i, el)"` and accesses elements via `panelRefs[i].videoEl`.
+`VideoPanel` exposes `videoEl` via `defineExpose`. `PlayerPage` stores components in `panelRefs[]` via `:ref="el => setRef(i, el)"` and accesses the raw element with `videoEl(i) → panelRefs[i]?.videoEl`.
+
+### Sync model
+- The **primary** panel's `<video>` is the clock source.
+- A `requestAnimationFrame` loop runs during playback; each frame it reads `primaryEl.currentTime`, writes it to `currentTime` (drives the seekbar), then calls `syncAll`.
+- `syncAll` — soft sync: corrects side videos only if drift > **250 ms**. Used during the playback loop.
+- `hardSyncAll` — exact seek: always seeks side videos to `primaryT + offset`. Used on play, pause, seek, skip, primary switch, sound switch, and file load.
+- Offset re-rooting: when the primary is switched or removed, all other panels' offsets are adjusted by `−oldPrimaryOffset` so relative timing is preserved.
+
+### Sync lifecycle
+| Event | Action |
+|---|---|
+| Play | `hardSyncAll` → `play()` all → start RAF loop |
+| Pause | `pause()` all → stop RAF loop → `hardSyncAll` |
+| Seek / skip | update primary `currentTime` → `hardSyncAll` |
+| File load (mid-playback) | wait for `loadedmetadata` → seek to `primaryT + offset` → `play()` if playing |
+| Primary switch | re-root offsets → `hardSyncAll` |
+| Sound switch | toggle `hasSound` → `hardSyncAll` |
+| Panel remove (primary) | pick new primary → re-root offsets |
+| Panel remove (sound) | hand off `hasSound` to primary or first panel |
 
 ### Magnifier
-`VideoPanel` renders a `<canvas>` overlay (absolutely positioned, `inset: 0`) sized via `ResizeObserver`. When `zoomActive` prop is true and the mouse is inside the panel, a `requestAnimationFrame` loop calls `drawImage(videoEl, srcX, srcY, srcW, srcH, ...)` — source coordinates are computed in the video's **native pixel space** (full 4K if applicable) after accounting for `object-fit: contain` letterboxing. Zoom level and radius are props passed down from `PlayerPage` → `VideoPanel`; their controls live in `TransportBar` and flow up via `v-model:zoomLevel` / `v-model:zoomRadius`.
+`VideoPanel` renders a `<canvas>` overlay (`inset: 0`, `pointer-events: none` when inactive). When `zoomActive` is true:
+- `pointer-events: auto` + `cursor: crosshair`
+- A `requestAnimationFrame` loop runs while the mouse is inside the panel
+- Each frame: `drawImage(videoEl, srcX, srcY, srcSz, srcSz, mx-R, my-R, 2R, 2R)` where source coords are computed in the video's **native pixel space** (full resolution, e.g. 4K) accounting for `object-fit: contain` letterboxing
+- A circular clip + crosshair is drawn on top
+
+Zoom props flow: `PlayerPage` owns `zoomActive / zoomLevel / zoomRadius` → passed to `TransportBar` via `v-model:*` → passed to each `VideoPanel` as props.
 
 ### Grid layout
-`gridCols` in `PlayerPage` maps video count → column count: 1→1, 2→2, 3→3, 4→2, 5–6→3, 7–9→4.
+`gridCols` in `PlayerPage`: 1→1, 2→2, 3→3, 4→2, 5–6→3, 7–9→4 columns.
+
+### TransportBar
+Pure props/emits. Exposes `isSeeking` (ref) so `PlayerPage`'s RAF loop can skip `currentTime` writes while the user is dragging the seekbar. Skip buttons: −30s, −10s, −5s, ▶/⏸, +5s, +10s, +30s.
