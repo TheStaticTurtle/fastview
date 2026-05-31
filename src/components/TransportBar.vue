@@ -2,13 +2,19 @@
 import { ref, computed } from 'vue'
 
 const props = defineProps({
-  currentTime: { type: Number, default: 0 },
-  duration:    { type: Number, default: 0 },
+  currentTime: { type: Number,  default: 0 },
+  duration:    { type: Number,  default: 0 },
   isPlaying:   { type: Boolean, default: false },
   canPlay:     { type: Boolean, default: false },
+  zoomActive:  { type: Boolean, default: false },
+  zoomLevel:   { type: Number,  default: 2 },
+  zoomRadius:  { type: Number,  default: 80 },
 })
 
-const emit = defineEmits(['toggle-play', 'seek', 'skip'])
+const emit = defineEmits([
+  'toggle-play', 'seek', 'skip',
+  'update:zoomActive', 'update:zoomLevel', 'update:zoomRadius',
+])
 
 const isSeeking = ref(false)
 
@@ -51,14 +57,46 @@ defineExpose({ isSeeking })
       <span class="time-label right">{{ fmt(duration) }}</span>
     </div>
 
-    <div class="btn-row">
-      <button class="btn skip-btn" @click="emit('skip', -30)">−30s</button>
-      <button class="btn skip-btn" @click="emit('skip', -10)">−10s</button>
-      <button class="btn play-btn" :disabled="!canPlay" @click="emit('toggle-play')">
-        {{ isPlaying ? '⏸' : '▶' }}
-      </button>
-      <button class="btn skip-btn" @click="emit('skip', 10)">+10s</button>
-      <button class="btn skip-btn" @click="emit('skip', 30)">+30s</button>
+    <div class="bottom-row">
+      <!-- playback controls (centred) -->
+      <div class="btn-row">
+        <button class="btn skip-btn" @click="emit('skip', -30)">−30s</button>
+        <button class="btn skip-btn" @click="emit('skip', -10)">−10s</button>
+        <button class="btn skip-btn" @click="emit('skip', -5)">−5s</button>
+        <button class="btn play-btn" :disabled="!canPlay" @click="emit('toggle-play')">
+          {{ isPlaying ? '⏸' : '▶' }}
+        </button>
+        <button class="btn skip-btn" @click="emit('skip', 5)">+5s</button>
+        <button class="btn skip-btn" @click="emit('skip', 10)">+10s</button>
+        <button class="btn skip-btn" @click="emit('skip', 30)">+30s</button>
+      </div>
+
+      <!-- zoom controls (right-aligned) -->
+      <div class="zoom-area">
+        <button
+          class="btn zoom-toggle" :class="{ active: zoomActive }"
+          @click="emit('update:zoomActive', !zoomActive)"
+          title="Toggle magnifier"
+        >🔍 Zoom</button>
+        <div v-if="zoomActive" class="zoom-sliders">
+          <span class="zoom-label">Level</span>
+          <input
+            type="range" class="zoom-slider"
+            min="1.5" max="8" step="0.5"
+            :value="zoomLevel"
+            @input="emit('update:zoomLevel', parseFloat($event.target.value))"
+          />
+          <span class="zoom-value">{{ zoomLevel }}×</span>
+          <span class="zoom-label">Radius</span>
+          <input
+            type="range" class="zoom-slider"
+            min="30" max="200" step="10"
+            :value="zoomRadius"
+            @input="emit('update:zoomRadius', parseFloat($event.target.value))"
+          />
+          <span class="zoom-value">{{ zoomRadius }}px</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -70,7 +108,7 @@ defineExpose({ isSeeking })
   border-top: 1px solid #2a2a2a;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
   flex-shrink: 0;
 }
 
@@ -78,6 +116,7 @@ defineExpose({ isSeeking })
   display: flex;
   align-items: center;
   gap: 10px;
+  padding-bottom: 18px;
 }
 
 .time-label {
@@ -115,13 +154,40 @@ defineExpose({ isSeeking })
   margin: 0;
 }
 
+/* ── bottom row: playback centred, zoom right ── */
+.bottom-row {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
 .btn-row {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
+.zoom-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.zoom-sliders {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #2a7a4a;
+  background: #111e15;
+}
+
+/* ── shared button base ── */
 .btn {
   background: #2c2c2c;
   color: #ccc;
@@ -152,4 +218,29 @@ defineExpose({ isSeeking })
 }
 .play-btn:hover    { background: #2270cc; }
 .play-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── zoom ── */
+.zoom-toggle.active {
+  background: #1a4a2a;
+  border-color: #2a7a4a;
+  color: #5dbb7a;
+}
+
+.zoom-label {
+  font-size: 11px;
+  color: #666;
+}
+
+.zoom-slider {
+  width: 72px;
+  accent-color: #4a9eff;
+  cursor: pointer;
+}
+
+.zoom-value {
+  font-size: 11px;
+  color: #aaa;
+  min-width: 36px;
+  font-variant-numeric: tabular-nums;
+}
 </style>

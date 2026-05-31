@@ -134,6 +134,12 @@ function seekTo(t) {
 }
 
 function onSkip(delta) { seekTo(currentTime.value + delta) }
+
+// ── zoom ──────────────────────────────────────────────────────────────────────
+
+const zoomActive = ref(false)
+const zoomLevel  = ref(2)
+const zoomRadius = ref(80)
 </script>
 
 <template>
@@ -153,6 +159,9 @@ function onSkip(delta) { seekTo(currentTime.value + delta) }
         :src="p.src"
         :filename="p.filename"
         :offset="p.offset"
+        :zoom-active="zoomActive"
+        :zoom-level="zoomLevel"
+        :zoom-radius="zoomRadius"
         @set-sound="onSetSound(i)"
         @update:name="panels[i].name = $event"
         @file-load="onFileLoad(i, $event)"
@@ -169,6 +178,9 @@ function onSkip(delta) { seekTo(currentTime.value + delta) }
       :duration="duration"
       :is-playing="isPlaying"
       :can-play="canPlay"
+      v-model:zoom-active="zoomActive"
+      v-model:zoom-level="zoomLevel"
+      v-model:zoom-radius="zoomRadius"
       @toggle-play="togglePlay"
       @seek="seekTo"
       @skip="onSkip"
@@ -215,6 +227,6 @@ function onSkip(delta) { seekTo(currentTime.value + delta) }
   gap: 6px;
   flex: 1;
   min-height: 0;
-  padding: 6px 6px 0;
+  padding: 6px 6px 8px;
 }
 </style>

@@ -1,13 +1,16 @@
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 
 const props = defineProps({
-  name:      { type: String,  required: true },
-  isPrimary: { type: Boolean, default: false },
-  hasSound:  { type: Boolean, default: false },
-  src:       { type: String,  default: null },
-  filename:  { type: String,  default: null },
-  offset:    { type: Number,  default: 0 },
+  name:       { type: String,  required: true },
+  isPrimary:  { type: Boolean, default: false },
+  hasSound:   { type: Boolean, default: false },
+  src:        { type: String,  default: null },
+  filename:   { type: String,  default: null },
+  offset:     { type: Number,  default: 0 },
+  zoomActive: { type: Boolean, default: false },
+  zoomLevel:  { type: Number,  default: 2 },
+  zoomRadius: { type: Number,  default: 80 },
 })
 
 const emit = defineEmits([
@@ -20,10 +23,16 @@ const emit = defineEmits([
   'update:name',
 ])
 
-const videoEl = ref(null)
+// ── video + canvas refs ───────────────────────────────────────────────────────
+
+const videoEl  = ref(null)
+const canvasEl = ref(null)
+const wrapperEl = ref(null)
 defineExpose({ videoEl })
 
-const editing = ref(false)
+// ── name editing ──────────────────────────────────────────────────────────────
+
+const editing   = ref(false)
 const nameInput = ref(null)
 const editValue = ref('')
 
@@ -39,12 +48,129 @@ function commitEdit() {
   editing.value = false
 }
 
+// ── file loading ──────────────────────────────────────────────────────────────
+
 function onFileChange(e) {
   const file = e.target.files[0]
   if (!file) return
   emit('file-load', file)
   e.target.value = ''
 }
+
+// ── magnifier ─────────────────────────────────────────────────────────────────
+
+const mouse = { x: 0, y: 0, over: false }
+let rafId = null
+
+function syncCanvasSize() {
+  const c = canvasEl.value
+  if (!c) return
+  c.width  = c.offsetWidth
+  c.height = c.offsetHeight
+}
+
+function drawMagnifier() {
+  const canvas = canvasEl.value
+  const video  = videoEl.value
+  if (!canvas || !video || !video.videoWidth) return
+
+  const ctx  = canvas.getContext('2d')
+  const W    = canvas.width
+  const H    = canvas.height
+  const vW   = video.videoWidth
+  const vH   = video.videoHeight
+  const mx   = mouse.x
+  const my   = mouse.y
+  const Z    = props.zoomLevel
+  const R    = props.zoomRadius
+
+  ctx.clearRect(0, 0, W, H)
+
+  // object-fit: contain metrics
+  const scale = Math.min(W / vW, H / vH)
+  const rW    = vW * scale
+  const rH    = vH * scale
+  const ox    = (W - rW) / 2
+  const oy    = (H - rH) / 2
+
+  // map mouse (canvas px) → video px
+  const mvx = (mx - ox) / scale
+  const mvy = (my - oy) / scale
+
+  // source region in video px that fills the circle at zoom Z
+  const srcR  = R / Z / scale
+  const srcX  = mvx - srcR
+  const srcY  = mvy - srcR
+  const srcSz = srcR * 2
+
+  // clip to circle
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(mx, my, R, 0, Math.PI * 2)
+  ctx.clip()
+
+  ctx.drawImage(video, srcX, srcY, srcSz, srcSz, mx - R, my - R, R * 2, R * 2)
+  ctx.restore()
+
+  // lens border + crosshair
+  ctx.beginPath()
+  ctx.arc(mx, my, R, 0, Math.PI * 2)
+  ctx.strokeStyle = 'rgba(255,255,255,0.75)'
+  ctx.lineWidth = 2
+  ctx.stroke()
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)'
+  ctx.lineWidth = 1
+  ctx.beginPath(); ctx.moveTo(mx - R + 6, my); ctx.lineTo(mx + R - 6, my); ctx.stroke()
+  ctx.beginPath(); ctx.moveTo(mx, my - R + 6); ctx.lineTo(mx, my + R - 6); ctx.stroke()
+}
+
+function startLoop() {
+  if (rafId) return
+  function loop() {
+    drawMagnifier()
+    rafId = requestAnimationFrame(loop)
+  }
+  rafId = requestAnimationFrame(loop)
+}
+
+function stopLoop() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null }
+  const ctx = canvasEl.value?.getContext('2d')
+  if (ctx) ctx.clearRect(0, 0, canvasEl.value.width, canvasEl.value.height)
+}
+
+watch(
+  () => props.zoomActive && mouse.over,
+  active => active ? startLoop() : stopLoop()
+)
+
+// also re-draw immediately when zoom params change while hovering
+watch(() => [props.zoomLevel, props.zoomRadius], () => {
+  if (props.zoomActive && mouse.over) drawMagnifier()
+})
+
+function onMouseMove(e) {
+  const rect = canvasEl.value.getBoundingClientRect()
+  mouse.x = (e.clientX - rect.left) * (canvasEl.value.width  / rect.width)
+  mouse.y = (e.clientY - rect.top)  * (canvasEl.value.height / rect.height)
+  mouse.over = true
+  if (props.zoomActive && !rafId) startLoop()
+}
+
+function onMouseLeave() {
+  mouse.over = false
+  if (props.zoomActive) stopLoop()
+}
+
+// keep canvas pixels in sync with CSS size
+let ro
+onMounted(() => {
+  syncCanvasSize()
+  ro = new ResizeObserver(syncCanvasSize)
+  ro.observe(canvasEl.value)
+})
+onUnmounted(() => { ro?.disconnect(); stopLoop() })
 </script>
 
 <template>
@@ -62,15 +188,14 @@ function onFileChange(e) {
       <span v-else class="panel-label" title="Click to rename" @click="startEdit">{{ name }}</span>
       <span v-if="isPrimary" class="badge primary-badge">primary</span>
       <button
-        class="sound-btn"
-        :class="{ active: hasSound }"
-        :title="hasSound ? 'Sound source (click to mute)' : 'Switch sound to this panel'"
+        class="sound-btn" :class="{ active: hasSound }"
+        :title="hasSound ? 'Sound source' : 'Switch sound here'"
         @click="emit('set-sound')"
       >{{ hasSound ? '🔊' : '🔇' }}</button>
-      <span v-if="filename"  class="panel-filename" :title="filename">{{ filename }}</span>
+      <span v-if="filename" class="panel-filename" :title="filename">{{ filename }}</span>
     </div>
 
-    <div class="video-wrapper">
+    <div ref="wrapperEl" class="video-wrapper">
       <video
         ref="videoEl"
         :src="src ?? undefined"
@@ -82,6 +207,13 @@ function onFileChange(e) {
         @ended="emit('ended', $event)"
       />
       <div v-if="!src" class="placeholder">No file loaded</div>
+      <canvas
+        ref="canvasEl"
+        class="magnifier-canvas"
+        :class="{ active: zoomActive }"
+        @mousemove="onMouseMove"
+        @mouseleave="onMouseLeave"
+      />
     </div>
 
     <div class="panel-footer">
@@ -156,6 +288,7 @@ function onFileChange(e) {
   letter-spacing: 0.04em;
 }
 .primary-badge { background: #1a3a6a; color: #6ab0ff; }
+
 .sound-btn {
   background: none;
   border: none;
@@ -202,6 +335,18 @@ function onFileChange(e) {
   color: #3a3a3a;
   font-size: 13px;
   pointer-events: none;
+}
+
+.magnifier-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;   /* default: no interaction */
+}
+.magnifier-canvas.active {
+  pointer-events: auto;
+  cursor: crosshair;
 }
 
 .panel-footer {
