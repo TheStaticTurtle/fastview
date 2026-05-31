@@ -8,6 +8,7 @@ const props = defineProps({
   src:        { type: String,  default: null },
   filename:   { type: String,  default: null },
   offset:     { type: Number,  default: 0 },
+  removable:  { type: Boolean, default: false },
   zoomActive: { type: Boolean, default: false },
   zoomLevel:  { type: Number,  default: 2 },
   zoomRadius: { type: Number,  default: 80 },
@@ -16,11 +17,12 @@ const props = defineProps({
 const emit = defineEmits([
   'file-load',
   'update:offset',
-  'timeupdate',
   'loadedmetadata',
   'ended',
+  'set-primary',
   'set-sound',
   'update:name',
+  'remove',
 ])
 
 // ── video + canvas refs ───────────────────────────────────────────────────────
@@ -186,13 +188,19 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
         @keydown.escape="editing = false"
       />
       <span v-else class="panel-label" title="Click to rename" @click="startEdit">{{ name }}</span>
-      <span v-if="isPrimary" class="badge primary-badge">primary</span>
-      <button
-        class="sound-btn" :class="{ active: hasSound }"
-        :title="hasSound ? 'Sound source' : 'Switch sound here'"
-        @click="emit('set-sound')"
-      >{{ hasSound ? '🔊' : '🔇' }}</button>
-      <span v-if="filename" class="panel-filename" :title="filename">{{ filename }}</span>
+      <div class="header-actions">
+        <button
+          class="badge-btn primary-btn" :class="{ active: isPrimary }"
+          :title="isPrimary ? 'Sync master' : 'Set as sync master'"
+          @click="emit('set-primary')"
+        >primary</button>
+        <button
+          class="badge-btn sound-btn" :class="{ active: hasSound }"
+          :title="hasSound ? 'Sound source' : 'Switch sound here'"
+          @click="emit('set-sound')"
+        >audio</button>
+        <button v-if="removable" class="remove-btn" title="Remove panel" @click="emit('remove')">✕</button>
+      </div>
     </div>
 
     <div ref="wrapperEl" class="video-wrapper">
@@ -202,7 +210,6 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
         :muted="!hasSound"
         class="video"
         preload="metadata"
-        @timeupdate="emit('timeupdate', $event)"
         @loadedmetadata="emit('loadedmetadata', $event)"
         @ended="emit('ended', $event)"
       />
@@ -256,7 +263,7 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
 }
 
 .panel-label {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -266,7 +273,7 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
 .panel-label:hover { color: #fff; }
 
 .panel-label-input {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -279,38 +286,54 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
   width: 90px;
 }
 
-.badge {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1px 5px;
-  border-radius: 3px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: auto;
 }
-.primary-badge { background: #1a3a6a; color: #6ab0ff; }
+
+.badge-btn {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  line-height: 1;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.primary-btn {
+  background: #1a2a3a;
+  border: 1px solid #1e3a5a;
+  color: #3a7ab0;
+  opacity: 0.5;
+}
+.primary-btn:hover  { opacity: 0.85; }
+.primary-btn.active { background: #1a3a6a; border-color: #2a5a9a; color: #6ab0ff; opacity: 1; }
 
 .sound-btn {
+  background: #1e2a1e;
+  border: 1px solid #2a3a2a;
+  color: #4a7a4a;
+  opacity: 0.5;
+}
+.sound-btn:hover  { opacity: 0.85; }
+.sound-btn.active { background: #1a3a1a; border-color: #2a6a2a; color: #6abf6a; opacity: 1; }
+
+.remove-btn {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 14px;
-  padding: 0 2px;
+  padding: 0 3px;
   line-height: 1;
-  opacity: 0.3;
-  transition: opacity 0.15s, transform 0.1s;
-}
-.sound-btn:hover  { opacity: 0.7; transform: scale(1.15); }
-.sound-btn.active { opacity: 1; }
-
-.panel-filename {
   font-size: 11px;
-  color: #555;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-  flex: 1;
+  color: #444;
+  transition: color 0.12s;
 }
+.remove-btn:hover { color: #e05555; }
 
 .video-wrapper {
   position: relative;
