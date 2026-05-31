@@ -1,8 +1,11 @@
 {
-  "name": "tmp-player",
-  "version": "0.0.0",
+  "name": "fastview",
+  "description": "Very simple in-browser multiview vidoe player",
   "private": true,
   "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/TheStaticTurtle/fastview",
+  "author": "TheStaticTurtle <samuel@thestaticturtle.fr> (https://thestaticturtle.fr)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

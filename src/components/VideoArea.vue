@@ -26,6 +26,20 @@ function onFileChange(e) {
   e.target.value = ''
 }
 
+function onDragOver(e) {
+  e.preventDefault()
+  e.dataTransfer.dropEffect = 'copy'
+}
+
+function onDrop(e) {
+  e.preventDefault()
+  const file = e.dataTransfer.files[0]
+  if (file && file.type.startsWith('video/')) {
+    e.stopPropagation()
+    emit('file-load', file)
+  }
+}
+
 // ── magnifier ─────────────────────────────────────────────────────────────────
 
 const mouse = { x: 0, y: 0, over: false }
@@ -128,7 +142,7 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
 </script>
 
 <template>
-  <div class="video-wrapper">
+  <div class="video-wrapper" @dragover="onDragOver" @drop="onDrop">
     <video
       ref="videoEl"
       :src="src ?? undefined"
@@ -140,7 +154,7 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
       @ended="emit('ended', $event)"
     />
     <label v-if="!src" class="load-overlay">
-      <span class="load-overlay-text">Click to load video</span>
+      <span class="load-overlay-text">Click or drop video</span>
       <input ref="fileInput" type="file" accept="video/*" @change="onFileChange" hidden />
     </label>
     <input v-else ref="fileInput" type="file" accept="video/*" @change="onFileChange" hidden />

@@ -21,18 +21,30 @@ No test runner or linter is configured yet.
 - `@` alias resolves to `src/`
 - Vue Devtools plugin enabled in dev mode
 
+## Build-time constants
+
+`vite.config.js` injects three globals at build time — use them directly in components, no import needed:
+
+| Global | Source | Value |
+|---|---|---|
+| `__GIT_HASH__` | `git rev-parse --short HEAD` | short commit hash, e.g. `"915005e"` |
+| `__PROJECT_URL__` | `package.json` → `homepage` | project URL string |
+| `__LICENSE__` | `package.json` → `license` | license string, e.g. `"MIT"` |
+
 ## Component map
 
 ```
 App.vue                          — thin root, mounts PlayerPage
 
 components/
-  PlayerPage.vue                 — all player state + logic
+  PlayerPage.vue                 — all player state + logic; owns panels[], zoom state,
+                                   drag-reorder state, layout export/import, helpOpen flag
 
   VideoPanel.vue                 — panel tile shell (drag, expose videoEl)
     PanelHeader.vue              — drag handle, editable label, settings, remove button
       PanelSettingsMenu.vue      — gear dropdown (primary / audio / offset)
-    VideoArea.vue                — <video>, load overlay, file input, magnifier canvas
+    VideoArea.vue                — <video>, load overlay (click + drag&drop), file input,
+                                   magnifier canvas
 
   TransportBar.vue               — lays out the transport bar
     SeekBar.vue                  — seekbar track + time labels; exposes isSeeking
@@ -40,7 +52,9 @@ components/
     PlaybackControls.vue         — skip buttons + play/pause
     ZoomControls.vue             — zoom toggle + level/radius sliders
 
-  FileMenu.vue                   — topbar File button + dropdown
+  FileMenu.vue                   — topbar File button + dropdown (add panel, export/import layout)
+  HelpModal.vue                  — full-screen modal (Teleport to body); help sections + about
+                                   section (git hash, project URL, license from build constants)
 
   icons/
     CaretDownIcon.vue
@@ -88,6 +102,12 @@ App starts with a single panel `{ id:0, name:'Video 1', isPrimary:true, hasSound
 ### Video element access
 `VideoArea` exposes `videoEl` (the raw `<video>` DOM ref) via `defineExpose`. `VideoPanel` forwards it as a computed ref and re-exposes it. `PlayerPage` stores panel components in `panelRefs[]` via `:ref="el => setRef(i, el)"` and accesses the raw element with `videoEl(i) → panelRefs[i]?.videoEl`.
 
+### File loading
+- `VideoArea` handles both click-to-open (via hidden `<input type="file">`) and drag & drop (`dragover` / `drop` on `.video-wrapper`).
+- On drop, if `dataTransfer.files[0]` is a video MIME type the event is stopped (preventing bubble to the panel reorder handler) and `file-load` is emitted.
+- `VideoPanel` is `draggable="true"` and guards reorder drags via a `dragFromHandle` flag; only drags initiated from `.drag-handle` are forwarded as reorder events. File drops from outside the app always have `dataTransfer.files` and never trigger reorder logic.
+- On `file-load`, `PlayerPage` creates a blob URL, assigns it to the panel's `src`, and if mid-playback waits for `loadedmetadata` then seeks to `primaryT + offset` and calls `play()`.
+
 ### Sync model
 - The **primary** panel's `<video>` is the clock source.
 - A `requestAnimationFrame` loop runs during playback; each frame it reads `primaryEl.currentTime`, writes it to `currentTime` (drives the seekbar), then calls `syncAll`.
@@ -113,11 +133,21 @@ App starts with a single panel `{ id:0, name:'Video 1', isPrimary:true, hasSound
 - A `requestAnimationFrame` loop runs while the mouse is inside the panel
 - Each frame: `drawImage(videoEl, srcX, srcY, srcSz, srcSz, mx-R, my-R, 2R, 2R)` where source coords are computed in the video's **native pixel space** (full resolution, e.g. 4K) accounting for `object-fit: contain` letterboxing
 - A circular clip + crosshair is drawn on top
+- The magnifier's RAF loop is separate from the sync RAF loop; both can run simultaneously
 
 Zoom props flow: `PlayerPage` owns `zoomActive / zoomLevel / zoomRadius` → passed to `TransportBar` via `v-model:*` → passed to each `VideoPanel` / `VideoArea` as props.
 
 ### Grid layout
-`gridCols` in `PlayerPage`: 1→1, 2→2, 3→3, 4→2, 5–9→3 columns.
+`gridCols` in `PlayerPage`: 1→1, 2→2, 3→3, 4→2, 5–9→3 columns. Passed as CSS custom property `--cols` on `.panels`.
 
 ### TransportBar
 Pure props/emits. Delegates to `SeekBar` (exposes `isSeeking` so `PlayerPage`'s RAF loop skips `currentTime` writes while seeking), `GotoInput`, `PlaybackControls`, and `ZoomControls`. Skip buttons: −30s, −10s, −5s, ▶/⏸, +5s, +10s, +30s.
+
+### Topbar layout
+`PlayerPage` renders a `.topbar` flex row. `FileMenu` is left-aligned. The **Help** button sits at the far right via `margin-left: auto`. Clicking Help sets `helpOpen = true`, which mounts `HelpModal` (teleported to `<body>`). Clicking the backdrop or the ✕ button closes it.
+
+### Layout export / import
+Export serialises `{ currentTime, panels: [{ name, isPrimary, hasSound, offset }] }` as a downloaded JSON file. Import reads that JSON, validates it, rebuilds the `panels` array (clamped to 9, enforcing exactly one primary and one sound panel), revokes old blob URLs, and resets playback state. Video `src` fields are not serialised — files must be re-loaded after import.
+
+### HelpModal
+Teleported to `<body>` so it overlays the full viewport. Clicking the backdrop (`.modal-backdrop`) emits `close`. Contains a scrollable body with help sections and an about section at the bottom. About section reads `__GIT_HASH__`, `__PROJECT_URL__`, and `__LICENSE__` from build-time globals.

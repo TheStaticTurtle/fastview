@@ -114,7 +114,8 @@ function commitEdit() {
   border-radius: $radius-sm;
   padding: 0 $space-2;
   outline: none;
-  width: 90px;
+  flex: 1;
+  min-width: 0;
 }
 
 .header-actions {

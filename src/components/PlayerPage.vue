@@ -3,6 +3,7 @@ import { ref, computed, nextTick, onUnmounted } from 'vue'
 import VideoPanel from './VideoPanel.vue'
 import TransportBar from './TransportBar.vue'
 import FileMenu from './FileMenu.vue'
+import HelpModal from './HelpModal.vue'
 
 // ── panel state ───────────────────────────────────────────────────────────────
 
@@ -290,13 +291,18 @@ function onPanelDragEnd() {
 const zoomActive = ref(false)
 const zoomLevel  = ref(2)
 const zoomRadius = ref(80)
+
+const helpOpen = ref(false)
 </script>
 
 <template>
   <div class="player">
     <div class="topbar">
       <FileMenu :panel-count="panels.length" @add-panel="addPanel" @export-layout="exportLayout" @import-layout="importLayout" />
+      <button class="btn btn--sm topbar-right" @click="helpOpen = true">Help</button>
     </div>
+
+    <HelpModal v-if="helpOpen" @close="helpOpen = false" />
 
     <div class="panels" :style="{ '--cols': gridCols }">
       <VideoPanel
@@ -359,6 +365,10 @@ const zoomRadius = ref(80)
   border-bottom: 1px solid $border-subtle;
   min-height: 36px;
   flex-shrink: 0;
+}
+
+.topbar-right {
+  margin-left: auto;
 }
 
 .panels {

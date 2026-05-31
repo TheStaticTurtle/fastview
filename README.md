@@ -1,6 +1,6 @@
-# Multi-Video Player
+# FastView
 
-A browser-based player for synchronised multi-camera review. Load up to 9 video files side-by-side, keep them in sync with per-panel time offsets, and inspect frames with a magnifying-glass tool.
+FastView is a browser-based player for synchronized multi-camera review. Load up to 9 video files side-by-side, keep them in sync with per-panel time offsets, and inspect frames with a magnifying-glass tool.
 
 ## Getting started
 
@@ -19,6 +19,11 @@ npm run build      # production build → dist/
 - Click the panel name to rename it; loading a file sets the name automatically from the filename
 - Grid layout adjusts automatically: 1–3 → 1 row, 4 → 2×2, 5–9 → 3 columns
 
+### Loading files
+- Click the empty panel area or drag & drop a video file onto it
+- Double-click a loaded panel to replace its file
+- New files loaded mid-playback automatically seek to the correct offset-adjusted position and join playback immediately
+
 ### Sync
 Every panel is synced to the **primary** video. The primary's playhead is the clock — all other panels follow it with a configurable time offset.
 
@@ -26,7 +31,7 @@ Every panel is synced to the **primary** video. The primary's playhead is the cl
 - Sync is checked every animation frame during playback; panels more than 250 ms off are corrected
 - A hard exact-seek is forced on play, pause, skip, seek, and whenever the primary or audio source changes
 
-### Primary & audio
+### Primary & Audio
 Open the **⚙** settings on any panel to control:
 
 | Setting | Description |
@@ -54,8 +59,9 @@ Click **Zoom** in the transport bar to activate the magnifying-glass tool. While
 
 The lens samples the video's full native resolution (4K if available), not the scaled-down display.
 
-### Loading files mid-playback
-Load a new file into any panel while other panels are already playing. The new video automatically seeks to the correct offset-adjusted position and joins playback immediately. Double-click a loaded panel to swap its file.
+### Layout export / import
+- **File → Export layout** saves panel names and offsets to a JSON file
+- **File → Import layout** restores a saved layout (video files must be re-loaded manually)
 
 ## Browser notes
 
@@ -68,3 +74,7 @@ Load a new file into any panel while other panels are already playing. The new v
 - [Vue 3](https://vuejs.org/) — Composition API, `<script setup>` SFCs
 - [Vite 8](https://vite.dev/) — dev server and bundler
 - [SCSS](https://sass-lang.com/) — design tokens, mixins, global primitives
+
+## License
+
+MIT
