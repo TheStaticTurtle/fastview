@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed, nextTick, onUnmounted } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import VideoPanel from './panel/VideoPanel.vue'
 import TransportBar from './transport/TransportBar.vue'
 import FileMenu from './FileMenu.vue'
+import ViewMenu from './ViewMenu.vue'
 import HelpModal from './HelpModal.vue'
 import AppIcon from "@/components/icons/AppIcon.vue";
 
@@ -70,6 +71,17 @@ function stopSyncLoop() {
 }
 
 onUnmounted(stopSyncLoop)
+
+function onKeyDown(e) {
+  const tag = document.activeElement?.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return
+  if (e.code === 'Space')       { e.preventDefault(); togglePlay() }
+  else if (e.code === 'ArrowLeft')  { e.preventDefault(); onSkip(-5) }
+  else if (e.code === 'ArrowRight') { e.preventDefault(); onSkip(5) }
+}
+
+onMounted(()   => window.addEventListener('keydown', onKeyDown))
+onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
 
 // ── primary video events ──────────────────────────────────────────────────────
 
@@ -289,9 +301,10 @@ function onPanelDragEnd() {
 
 // ── zoom ──────────────────────────────────────────────────────────────────────
 
-const zoomActive = ref(false)
-const zoomLevel  = ref(2)
-const zoomRadius = ref(80)
+const zoomActive    = ref(false)
+const zoomLevel     = ref(2)
+const zoomRadius    = ref(80)
+const showTimecode  = ref(true)
 
 const helpOpen = ref(false)
 </script>
@@ -303,6 +316,7 @@ const helpOpen = ref(false)
       <span class="app-title">FastView</span>
       <span class="topbar-divider"></span>
       <FileMenu :panel-count="panels.length" @add-panel="addPanel" @export-layout="exportLayout" @import-layout="importLayout" />
+      <ViewMenu v-model:show-timecode="showTimecode" />
       <button class="btn btn--sm topbar-right" @click="helpOpen = true">Help</button>
     </div>
 
@@ -321,6 +335,7 @@ const helpOpen = ref(false)
         :zoom-active="zoomActive"
         :zoom-level="zoomLevel"
         :zoom-radius="zoomRadius"
+        :show-timecode="showTimecode"
         :removable="panels.length > 1"
         :class="{ 'panel--drag-over': dragOverIdx === i && dragSrcIdx !== i }"
         @dragstart="onPanelDragStart(i, $event)"

@@ -9,7 +9,7 @@ const props = defineProps({
   zoomRadius: { type: Number,  default: 80 },
 })
 
-const emit = defineEmits(['file-load', 'loadedmetadata', 'ended'])
+const emit = defineEmits(['file-load', 'loadedmetadata', 'ended', 'timeupdate'])
 
 const videoEl  = ref(null)
 const canvasEl = ref(null)
@@ -152,6 +152,7 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
       @dblclick="src ? fileInput.click() : undefined"
       @loadedmetadata="emit('loadedmetadata', $event)"
       @ended="emit('ended', $event)"
+      @timeupdate="emit('timeupdate', $event.target.currentTime)"
     />
     <label v-if="!src" class="load-overlay">
       <span class="load-overlay-text">Click or drop video</span>
