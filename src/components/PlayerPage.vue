@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, nextTick, onUnmounted } from 'vue'
 import VideoPanel from './VideoPanel.vue'
 import TransportBar from './TransportBar.vue'
+import FileMenu from './FileMenu.vue'
 
 // ── panel state ───────────────────────────────────────────────────────────────
 
@@ -239,39 +240,12 @@ const zoomActive = ref(false)
 const zoomLevel  = ref(2)
 const zoomRadius = ref(80)
 
-// ── file menu ─────────────────────────────────────────────────────────────────
-
-const menuOpen  = ref(false)
-const menuRef   = ref(null)
-
-function toggleMenu() { menuOpen.value = !menuOpen.value }
-
-function onDocClick(e) {
-  if (menuRef.value && !menuRef.value.contains(e.target)) menuOpen.value = false
-}
-
-onMounted(()   => document.addEventListener('mousedown', onDocClick))
-onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
 </script>
 
 <template>
   <div class="player">
     <div class="topbar">
-      <div ref="menuRef" class="menu-root">
-        <button class="btn menu-btn" :class="{ open: menuOpen }" @click="toggleMenu">
-          File <span class="menu-caret">▾</span>
-        </button>
-        <div v-if="menuOpen" class="dropdown">
-          <button
-            class="dropdown-item"
-            :disabled="panels.length >= 9"
-            @click="addPanel(); menuOpen = false"
-          >
-            <span class="item-icon">＋</span> Add panel
-            <span class="item-hint">{{ panels.length }} / 9</span>
-          </button>
-        </div>
-      </div>
+      <FileMenu :panel-count="panels.length" @add-panel="addPanel" />
     </div>
 
     <div class="panels" :style="{ '--cols': gridCols }">
@@ -343,83 +317,6 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
   flex-shrink: 0;
 }
 
-.btn {
-  background: #2c2c2c;
-  color: #ccc;
-  border: 1px solid #3a3a3a;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 12px;
-  padding: 4px 10px;
-  transition: background 0.12s, color 0.12s;
-  white-space: nowrap;
-}
-.btn:hover    { background: #3a3a3a; color: #fff; }
-.btn:disabled { opacity: 0.35; cursor: not-allowed; }
-
-/* ── file menu ── */
-.menu-root {
-  position: relative;
-}
-
-.menu-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.menu-btn.open {
-  background: #3a3a3a;
-  color: #fff;
-}
-
-.menu-caret {
-  font-size: 10px;
-  opacity: 0.6;
-}
-
-.dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  min-width: 180px;
-  background: #222;
-  border: 1px solid #3a3a3a;
-  border-radius: 6px;
-  padding: 4px;
-  z-index: 100;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  background: none;
-  border: none;
-  border-radius: 4px;
-  color: #ccc;
-  font-size: 13px;
-  padding: 6px 10px;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.1s, color 0.1s;
-}
-.dropdown-item:hover:not(:disabled) { background: #333; color: #fff; }
-.dropdown-item:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.item-icon {
-  font-size: 15px;
-  line-height: 1;
-  color: #888;
-}
-
-.item-hint {
-  margin-left: auto;
-  font-size: 11px;
-  color: #555;
-  font-variant-numeric: tabular-nums;
-}
 
 :deep(.panel--drag-over) {
   outline: 2px solid #4a9eff;
