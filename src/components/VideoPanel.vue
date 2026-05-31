@@ -8,7 +8,6 @@ const props = defineProps({
   isPrimary:  { type: Boolean, default: false },
   hasSound:   { type: Boolean, default: false },
   src:        { type: String,  default: null },
-  filename:   { type: String,  default: null },
   offset:     { type: Number,  default: 0 },
   removable:  { type: Boolean, default: false },
   zoomActive: { type: Boolean, default: false },
@@ -36,7 +35,7 @@ defineExpose({ videoEl })
 
 <template>
   <div
-    class="panel"
+    class="card panel"
     draggable="true"
     @dragstart="emit('dragstart', $event)"
     @dragover.prevent="emit('dragover', $event)"
@@ -70,14 +69,11 @@ defineExpose({ videoEl })
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .panel {
   display: flex;
   flex-direction: column;
-  background: #1a1a1a;
-  border-radius: 6px;
-  overflow: hidden;
-}
 
-.panel:active :deep(.drag-handle) { cursor: grabbing; }
+  &:active :deep(.drag-handle) { cursor: grabbing; }
+}
 </style>

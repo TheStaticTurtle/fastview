@@ -1,0 +1,130 @@
+// ── Layout helpers ────────────────────────────────────────────────────────────
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-row($gap: null) {
+  display: flex;
+  align-items: center;
+  @if $gap != null { gap: $gap; }
+}
+
+// ── Button ────────────────────────────────────────────────────────────────────
+
+@mixin btn-base($font-size: $font-size-lg, $padding: 5px 12px) {
+  background: $bg-input;
+  color: $text-secondary;
+  border: 1px solid $border-control;
+  border-radius: $radius-md;
+  cursor: pointer;
+  font-size: $font-size;
+  padding: $padding;
+  transition: background $t-fast, color $t-fast;
+  white-space: nowrap;
+
+  &:hover  { background: $border-control; color: $text-primary; }
+  &:active { background: #444; }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+}
+
+// ── Icon-only button ──────────────────────────────────────────────────────────
+
+@mixin icon-btn {
+  @include flex-center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: $radius-sm;
+  transition: color $t-base, background $t-base;
+}
+
+// ── Dropdown ──────────────────────────────────────────────────────────────────
+
+@mixin dropdown-container($z: $z-menu) {
+  position: absolute;
+  background: $bg-overlay;
+  border: 1px solid $border-control;
+  border-radius: $radius-lg;
+  padding: $space-2;
+  box-shadow: $shadow-dropdown;
+  z-index: $z;
+}
+
+@mixin dropdown-row {
+  @include flex-row($gap: $space-4);
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: $radius-input;
+  color: $text-secondary;
+  font-size: $font-size-lg;
+  padding: $space-3 $space-5;
+  cursor: pointer;
+  text-align: left;
+  transition: background $t-base, color $t-base;
+
+  &:hover:not(:disabled) { background: #333; color: $text-primary; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+// ── Input ─────────────────────────────────────────────────────────────────────
+
+@mixin input-base {
+  background: $bg-overlay;
+  border: 1px solid $border-input;
+  border-radius: $radius-input;
+  color: $text-muted;
+  outline: none;
+
+  &::placeholder { color: $text-disabled; }
+  &:focus { border-color: $border-focus; color: $text-primary; }
+}
+
+// ── Badge button ──────────────────────────────────────────────────────────────
+
+@mixin badge-btn-base {
+  font-size: $font-size-xs;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: $space-1 5px;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  line-height: 1;
+  transition: opacity $t-base, background $t-base, color $t-base;
+}
+
+// ── Surface bars (topbar / transport) ─────────────────────────────────────────
+
+@mixin surface-bar {
+  background: $bg-surface;
+  border-color: $border-subtle;
+  flex-shrink: 0;
+}
+
+// ── Panel header ──────────────────────────────────────────────────────────────
+
+@mixin panel-header-base {
+  @include flex-row($gap: $space-3);
+  padding: 5px $space-5;
+  background: $bg-control;
+  border-bottom: 1px solid $border-input;
+  min-height: 28px;
+  flex-shrink: 0;
+  transition: background $t-slow, border-color $t-slow;
+}
+
+// ── Number input (no spinner arrows) ─────────────────────────────────────────
+
+@mixin input-number-clean {
+  @include input-base;
+  text-align: right;
+  -moz-appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button { -webkit-appearance: none; }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+}

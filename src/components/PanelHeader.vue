@@ -38,9 +38,9 @@ function commitEdit() {
   <div
     class="panel-header"
     :class="{
-      'header--primary': isPrimary,
-      'header--sound':   hasSound && !isPrimary,
-      'header--both':    isPrimary && hasSound,
+      'panel-header--primary': isPrimary,
+      'panel-header--sound':   hasSound && !isPrimary,
+      'panel-header--both':    isPrimary && hasSound,
     }"
   >
     <DragHandleIcon class="drag-handle" title="Drag to reorder" />
@@ -48,13 +48,13 @@ function commitEdit() {
     <input
       v-if="editing"
       ref="nameInput"
-      class="panel-label-input"
+      class="label-input"
       v-model="editValue"
       @blur="commitEdit"
       @keydown.enter="commitEdit"
       @keydown.escape="editing = false"
     />
-    <span v-else class="panel-label" title="Click to rename" @click="startEdit">{{ name }}</span>
+    <span v-else class="label" title="Click to rename" @click="startEdit">{{ name }}</span>
 
     <div class="header-actions">
       <PanelSettingsMenu
@@ -72,74 +72,67 @@ function commitEdit() {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .panel-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  background: #242424;
-  border-bottom: 1px solid #333;
-  min-height: 28px;
-  flex-shrink: 0;
-  transition: background 0.2s, border-color 0.2s;
+  @include panel-header-base;
+
+  &--primary { background: $header-primary-bg; border-color: $header-primary-border; }
+  &--sound   { background: $header-sound-bg;   border-color: $header-sound-border; }
+  &--both    { background: $header-both-bg;     border-color: $header-both-border; }
 }
-.header--primary  { background: #1a2e4a; border-color: #1e3f6a; }
-.header--sound    { background: #1a2e1a; border-color: #1e4a1e; }
-.header--both     { background: #1a2a3a; border-color: #1e3a4a; }
 
 .drag-handle {
   width: 14px;
   height: 14px;
   flex-shrink: 0;
-  color: #444;
+  color: $text-disabled;
   cursor: grab;
   user-select: none;
-}
-.drag-handle:hover { color: #777; }
 
-.panel-label {
-  font-size: 10px;
+  &:hover { color: $text-ghost; }
+}
+
+.label {
+  font-size: $font-size-sm;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #aaa;
+  color: $text-muted;
   cursor: pointer;
-}
-.panel-label:hover { color: #fff; }
 
-.panel-label-input {
-  font-size: 10px;
+  &:hover { color: $text-primary; }
+}
+
+.label-input {
+  font-size: $font-size-sm;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #fff;
-  background: #333;
-  border: 1px solid #555;
-  border-radius: 3px;
-  padding: 0 4px;
+  color: $text-primary;
+  background: $border-input;
+  border: 1px solid $border-focus;
+  border-radius: $radius-sm;
+  padding: 0 $space-2;
   outline: none;
   width: 90px;
 }
 
 .header-actions {
-  display: flex;
-  align-items: center;
-  gap: 1px;
+  @include flex-row($gap: 1px);
   margin-left: auto;
 }
 
 .remove-btn {
+  @include flex-center;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0 2px;
-  display: flex;
-  align-items: center;
-  color: #444;
-  transition: color 0.12s;
+  padding: 0 $space-1;
+  color: $text-disabled;
+  transition: color $t-fast;
+
+  &:hover { color: $color-danger; }
 }
-.remove-btn:hover { color: #e05555; }
 
 .remove-icon {
   width: 13px;

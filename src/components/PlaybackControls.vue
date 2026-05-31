@@ -27,36 +27,19 @@ const emit = defineEmits(['toggle-play', 'skip'])
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .btn-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  @include flex-row($gap: $space-4);
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
 }
 
-.btn {
-  background: #2c2c2c;
-  color: #ccc;
-  border: 1px solid #3a3a3a;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 13px;
-  padding: 5px 12px;
-  transition: background 0.12s, color 0.12s;
-  white-space: nowrap;
-}
-.btn:hover  { background: #3a3a3a; color: #fff; }
-.btn:active { background: #444; }
-
 .skip-btn {
-  min-width: 52px;
-  display: flex;
-  align-items: center;
+  @include flex-row;
   justify-content: center;
   gap: 1px;
+  min-width: 52px;
 }
 
 .skip-icon {
@@ -66,21 +49,20 @@ const emit = defineEmits(['toggle-play', 'skip'])
 }
 
 .play-btn {
-  background: #1a5fb4;
-  border-color: #2a7ad4;
+  @include flex-center;
+  background: $accent-btn-bg;
+  border-color: $accent-btn-border;
   color: #fff;
   width: 48px;
   height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   padding: 0;
+
+  &:hover { background: $accent-btn-hover; }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
 }
 
 .play-icon {
   width: 22px;
   height: 22px;
 }
-.play-btn:hover    { background: #2270cc; }
-.play-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 </style>

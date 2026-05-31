@@ -38,42 +38,20 @@ const emit = defineEmits(['update:zoomActive', 'update:zoomLevel', 'update:zoomR
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .zoom-area {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  @include flex-row($gap: $space-4);
   margin-left: auto;
 }
 
-.zoom-sliders {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid #2a7a4a;
-  background: #111e15;
-}
-
-.btn {
-  background: #2c2c2c;
-  color: #ccc;
-  border: 1px solid #3a3a3a;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 13px;
-  padding: 5px 12px;
-  transition: background 0.12s, color 0.12s;
-  white-space: nowrap;
-}
-.btn:hover  { background: #3a3a3a; color: #fff; }
-.btn:active { background: #444; }
-
 .zoom-toggle {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  @include flex-row($gap: $space-2);
+
+  &.active {
+    background: $accent-green-bg;
+    border-color: $accent-green-border;
+    color: $accent-green;
+  }
 }
 
 .zoom-icon {
@@ -82,26 +60,28 @@ const emit = defineEmits(['update:zoomActive', 'update:zoomLevel', 'update:zoomR
   flex-shrink: 0;
 }
 
-.zoom-toggle.active {
-  background: #1a4a2a;
-  border-color: #2a7a4a;
-  color: #5dbb7a;
+.zoom-sliders {
+  @include flex-row($gap: $space-3);
+  padding: $space-2 $space-5;
+  border-radius: $radius-lg;
+  border: 1px solid $accent-green-border;
+  background: $accent-green-panel;
 }
 
 .zoom-label {
-  font-size: 11px;
-  color: #666;
+  font-size: $font-size-md;
+  color: $text-ghost;
 }
 
 .zoom-slider {
   width: 72px;
-  accent-color: #4a9eff;
+  accent-color: $accent;
   cursor: pointer;
 }
 
 .zoom-value {
-  font-size: 11px;
-  color: #aaa;
+  font-size: $font-size-md;
+  color: $text-muted;
   min-width: 36px;
   font-variant-numeric: tabular-nums;
 }

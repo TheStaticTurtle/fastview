@@ -154,7 +154,7 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .video-wrapper {
   position: relative;
   flex: 1;
@@ -172,23 +172,22 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
 .load-overlay {
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @include flex-center;
   cursor: pointer;
+
+  &:hover .load-overlay-text {
+    border-color: $text-ghost;
+    color: $text-muted;
+  }
 }
 
 .load-overlay-text {
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: 1px dashed #333;
-  color: #444;
-  font-size: 12px;
-  transition: border-color 0.15s, color 0.15s;
-}
-.load-overlay:hover .load-overlay-text {
-  border-color: #666;
-  color: #999;
+  padding: $space-4 $space-8;
+  border-radius: $radius-lg;
+  border: 1px dashed $border-input;
+  color: $text-disabled;
+  font-size: $font-size-base;
+  transition: border-color $t-base, color $t-base;
 }
 
 .magnifier-canvas {
@@ -197,9 +196,10 @@ onUnmounted(() => { ro?.disconnect(); stopLoop() })
   width: 100%;
   height: 100%;
   pointer-events: none;
-}
-.magnifier-canvas.active {
-  pointer-events: auto;
-  cursor: crosshair;
+
+  &.active {
+    pointer-events: auto;
+    cursor: crosshair;
+  }
 }
 </style>

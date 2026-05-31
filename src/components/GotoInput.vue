@@ -32,18 +32,12 @@ function onCommit() {
   />
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .goto-input {
+  @include input-base;
   width: 72px;
-  background: #222;
-  border: 1px solid #333;
-  border-radius: 4px;
-  color: #aaa;
-  font-size: 11px;
+  font-size: $font-size-md;
   padding: 3px 7px;
-  outline: none;
   font-variant-numeric: tabular-nums;
 }
-.goto-input::placeholder { color: #444; }
-.goto-input:focus { border-color: #555; color: #e8e8e8; }
 </style>

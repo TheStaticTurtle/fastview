@@ -50,50 +50,49 @@ defineExpose({ isSeeking })
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .seekbar-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  @include flex-row($gap: $space-5);
   padding-bottom: 18px;
 }
 
 .time-label {
-  font-size: 12px;
-  color: #888;
+  font-size: $font-size-base;
+  color: $text-faint;
   min-width: 44px;
   font-variant-numeric: tabular-nums;
+
+  &.right { text-align: right; }
 }
-.time-label.right { text-align: right; }
 
 .seekbar-track {
   position: relative;
   flex: 1;
   height: 4px;
-  background: #333;
-  border-radius: 2px;
+  background: $border-input;
+  border-radius: $space-1;
 }
 
 .seekbar-fill {
   position: absolute;
   left: 0; top: 0;
   height: 100%;
-  background: #4a9eff;
-  border-radius: 2px;
+  background: $accent;
+  border-radius: $space-1;
   pointer-events: none;
 }
 
 .seekbar-ball {
   position: absolute;
   top: 50%;
-  width: 12px;
-  height: 12px;
+  width: $space-6;
+  height: $space-6;
   background: #fff;
   border-radius: 50%;
   transform: translate(-50%, -50%);
   pointer-events: none;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-  transition: transform 0.1s;
+  box-shadow: $shadow-ball;
+  transition: transform $t-fast;
 }
 
 .seekbar-track:hover .seekbar-ball {

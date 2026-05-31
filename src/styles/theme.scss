@@ -1,0 +1,136 @@
+@import "variables";
+@import "mixins";
+
+// ── Reset / base ──────────────────────────────────────────────────────────────
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-weight: normal;
+}
+
+html, body, #app {
+  height: 100%;
+  overflow: hidden;
+  background: $bg-base;
+  color: $text-primary;
+  font-family: $font-family;
+  font-size: $font-size-base;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Primitives
+// ────────────────────────────────────────────────────────────────────────────
+
+// ── Button ────────────────────────────────────────────────────────────────────
+
+.btn {
+  @include btn-base;
+  // small variant — topbar / menu buttons
+  &--sm { font-size: $font-size-base; padding: $space-2 $space-5; }
+  // icon-only variant
+  &--icon { @include icon-btn; }
+}
+
+// ── Card ──────────────────────────────────────────────────────────────────────
+// A rounded, elevated surface. Use for panel tiles, floating containers, etc.
+
+.card {
+  background: $bg-elevated;
+  border-radius: $radius-lg;
+  overflow: hidden;
+}
+
+
+// ── Dropdown ──────────────────────────────────────────────────────────────────
+// Absolute-positioned menu container.
+
+.dropdown {
+  @include dropdown-container;
+
+  // ── Dropdown item — full-width clickable row with optional icon / hint ──
+  &-item {
+    @include dropdown-row;
+
+    .item-icon {
+      width: $space-8;
+      height: $space-8;
+      flex-shrink: 0;
+      color: $text-faint;
+    }
+
+    .item-hint {
+      margin-left: auto;
+      font-size: $font-size-md;
+      color: $text-disabled;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  // ── Dropdown settings variant — right-aligned, tighter z-index ──
+  &--settings {
+    @include dropdown-container($z: $z-settings);
+    right: 0;
+    min-width: 170px;
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+  }
+
+  // ── Settings row — label + control side by side ──
+  &-row {
+    @include flex-row;
+    justify-content: space-between;
+    padding: 5px $space-4;
+    border-radius: $radius-input;
+    gap: $space-6;
+
+    &:hover { background: #2a2a2a; }
+
+    .row-label {
+      font-size: $font-size-base;
+      color: $text-faint;
+    }
+  }
+}
+
+// ── Badge button ──────────────────────────────────────────────────────────────
+// Small pill button used for toggling named roles (primary, audio…).
+
+.badge-btn {
+  @include badge-btn-base;
+
+  &--primary {
+    background: $badge-primary-bg;
+    border: 1px solid $badge-primary-border;
+    color: $badge-primary-color;
+    opacity: 0.5;
+
+    &:hover { opacity: 0.85; }
+    &.active {
+      background: $badge-primary-active-bg;
+      border-color: $badge-primary-active-border;
+      color: $badge-primary-active-color;
+      opacity: 1;
+    }
+  }
+
+  &--sound {
+    background: $badge-sound-bg;
+    border: 1px solid $badge-sound-border;
+    color: $badge-sound-color;
+    opacity: 0.5;
+
+    &:hover { opacity: 0.85; }
+    &.active {
+      background: $badge-sound-active-bg;
+      border-color: $badge-sound-active-border;
+      color: $badge-sound-active-color;
+      opacity: 1;
+    }
+  }
+}
+

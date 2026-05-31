@@ -17,23 +17,61 @@ No test runner or linter is configured yet.
 
 - **Vue 3** with `<script setup>` SFCs
 - **Vite 8** as bundler/dev server (`vite.config.js`)
+- **SCSS** via `sass` — variables/mixins auto-injected into every component via `css.preprocessorOptions.scss.additionalData`
 - `@` alias resolves to `src/`
 - Vue Devtools plugin enabled in dev mode
 
 ## Component map
 
 ```
-App.vue                  — thin root, just mounts PlayerPage
+App.vue                          — thin root, mounts PlayerPage
+
 components/
-  PlayerPage.vue         — all player state + logic
-  VideoPanel.vue         — single video tile (video element + magnifier canvas)
-  TransportBar.vue       — seekbar, skip buttons, zoom controls
+  PlayerPage.vue                 — all player state + logic
+
+  VideoPanel.vue                 — panel tile shell (drag, expose videoEl)
+    PanelHeader.vue              — drag handle, editable label, settings, remove button
+      PanelSettingsMenu.vue      — gear dropdown (primary / audio / offset)
+    VideoArea.vue                — <video>, load overlay, file input, magnifier canvas
+
+  TransportBar.vue               — lays out the transport bar
+    SeekBar.vue                  — seekbar track + time labels; exposes isSeeking
+    GotoInput.vue                — "go to…" timestamp input
+    PlaybackControls.vue         — skip buttons + play/pause
+    ZoomControls.vue             — zoom toggle + level/radius sliders
+
+  FileMenu.vue                   — topbar File button + dropdown
+
+  icons/
+    CaretDownIcon.vue
+    CloseIcon.vue
+    DragHandleIcon.vue
+    MagnifierIcon.vue
+    MinusIcon.vue
+    PauseIcon.vue
+    PlayIcon.vue
+    PlusIcon.vue
+    SettingsIcon.vue
+
+composables/
+  useClickOutside.js             — closes a floating element when clicking outside
 ```
+
+## SCSS architecture
+
+```
+src/styles/
+  _variables.scss    — all design tokens (colours, spacing, radii, typography, shadows, z-index)
+  _mixins.scss       — reusable mixins (flex-row, btn-base, input-base, panel-header-base, …)
+  theme.scss         — global primitives imported once in main.js
+```
+
+`_variables.scss` and `_mixins.scss` are injected at the top of every `<style lang="scss">` block automatically — no explicit `@import` needed in components. `theme.scss` defines the global CSS classes: `.btn`, `.btn--sm`, `.btn--icon`, `.card`, `.dropdown`, `.dropdown-item`, `.dropdown--settings`, `.dropdown-row`, `.badge-btn`, `.badge-btn--primary`, `.badge-btn--sound`.
 
 ## Architecture
 
 ### Startup
-App starts with a single panel `{ id:0, name:'Video 1', isPrimary:true, hasSound:true }`. Panels can be added (＋, max 9) or removed (✕ per panel, min 1) at runtime.
+App starts with a single panel `{ id:0, name:'Video 1', isPrimary:true, hasSound:true, src:null, offset:0 }`. Panels can be added (max 9) or removed (min 1) at runtime via the File menu.
 
 ### Panel object shape
 ```js
@@ -43,13 +81,12 @@ App starts with a single panel `{ id:0, name:'Video 1', isPrimary:true, hasSound
   isPrimary: Boolean,  // exactly one panel is primary at all times
   hasSound:  Boolean,  // exactly one panel is unmuted at all times
   src:       String,   // blob URL, or null
-  filename:  String,   // original File.name, or null
   offset:    Number,   // seconds; side videos play at primaryTime + offset
 }
 ```
 
 ### Video element access
-`VideoPanel` exposes `videoEl` via `defineExpose`. `PlayerPage` stores components in `panelRefs[]` via `:ref="el => setRef(i, el)"` and accesses the raw element with `videoEl(i) → panelRefs[i]?.videoEl`.
+`VideoArea` exposes `videoEl` (the raw `<video>` DOM ref) via `defineExpose`. `VideoPanel` forwards it as a computed ref and re-exposes it. `PlayerPage` stores panel components in `panelRefs[]` via `:ref="el => setRef(i, el)"` and accesses the raw element with `videoEl(i) → panelRefs[i]?.videoEl`.
 
 ### Sync model
 - The **primary** panel's `<video>` is the clock source.
@@ -71,16 +108,16 @@ App starts with a single panel `{ id:0, name:'Video 1', isPrimary:true, hasSound
 | Panel remove (sound) | hand off `hasSound` to primary or first panel |
 
 ### Magnifier
-`VideoPanel` renders a `<canvas>` overlay (`inset: 0`, `pointer-events: none` when inactive). When `zoomActive` is true:
+`VideoArea` renders a `<canvas>` overlay (`inset: 0`, `pointer-events: none` when inactive). When `zoomActive` is true:
 - `pointer-events: auto` + `cursor: crosshair`
 - A `requestAnimationFrame` loop runs while the mouse is inside the panel
 - Each frame: `drawImage(videoEl, srcX, srcY, srcSz, srcSz, mx-R, my-R, 2R, 2R)` where source coords are computed in the video's **native pixel space** (full resolution, e.g. 4K) accounting for `object-fit: contain` letterboxing
 - A circular clip + crosshair is drawn on top
 
-Zoom props flow: `PlayerPage` owns `zoomActive / zoomLevel / zoomRadius` → passed to `TransportBar` via `v-model:*` → passed to each `VideoPanel` as props.
+Zoom props flow: `PlayerPage` owns `zoomActive / zoomLevel / zoomRadius` → passed to `TransportBar` via `v-model:*` → passed to each `VideoPanel` / `VideoArea` as props.
 
 ### Grid layout
-`gridCols` in `PlayerPage`: 1→1, 2→2, 3→3, 4→2, 5–6→3, 7–9→4 columns.
+`gridCols` in `PlayerPage`: 1→1, 2→2, 3→3, 4→2, 5–9→3 columns.
 
 ### TransportBar
-Pure props/emits. Exposes `isSeeking` (ref) so `PlayerPage`'s RAF loop can skip `currentTime` writes while the user is dragging the seekbar. Skip buttons: −30s, −10s, −5s, ▶/⏸, +5s, +10s, +30s.
+Pure props/emits. Delegates to `SeekBar` (exposes `isSeeking` so `PlayerPage`'s RAF loop skips `currentTime` writes while seeking), `GotoInput`, `PlaybackControls`, and `ZoomControls`. Skip buttons: −30s, −10s, −5s, ▶/⏸, +5s, +10s, +30s.

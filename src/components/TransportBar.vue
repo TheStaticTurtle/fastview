@@ -57,20 +57,17 @@ defineExpose({ isSeeking })
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .transport {
-  padding: 10px 12px 14px;
-  background: #181818;
-  border-top: 1px solid #2a2a2a;
+  @include surface-bar;
+  padding: $space-5 $space-6 14px;
+  border-top: 1px solid $border-subtle;
   display: flex;
   flex-direction: column;
-  gap: 0;
-  flex-shrink: 0;
 }
 
 .bottom-row {
-  display: flex;
-  align-items: center;
+  @include flex-row;
   position: relative;
 }
 </style>

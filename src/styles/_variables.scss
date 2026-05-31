@@ -1,0 +1,96 @@
+// ── Backgrounds ───────────────────────────────────────────────────────────────
+$bg-base:     #0f0f0f;   // html / body
+$bg-surface:  #181818;   // topbar, transport bar
+$bg-elevated: #1a1a1a;   // panel cards
+$bg-overlay:  #222;      // dropdowns
+$bg-control:  #242424;   // panel headers
+$bg-input:    #2c2c2c;   // buttons, number inputs
+
+// ── Borders ───────────────────────────────────────────────────────────────────
+$border-subtle:  #2a2a2a;  // section dividers
+$border-control: #3a3a3a;  // buttons, dropdowns
+$border-input:   #333;     // text inputs
+$border-focus:   #555;     // focused state
+
+// ── Text ──────────────────────────────────────────────────────────────────────
+$text-primary:   #e8e8e8;
+$text-secondary: #ccc;
+$text-muted:     #aaa;
+$text-faint:     #888;
+$text-ghost:     #666;
+$text-disabled:  #444;
+
+// ── Accent — Blue ─────────────────────────────────────────────────────────────
+$accent:            #4a9eff;   // seekbar fill, slider thumb
+$accent-btn-bg:     #1a5fb4;   // play button
+$accent-btn-border: #2a7ad4;
+$accent-btn-hover:  #2270cc;
+
+// ── Accent — Green ────────────────────────────────────────────────────────────
+$accent-green:        #5dbb7a;
+$accent-green-bg:     #1a4a2a;
+$accent-green-border: #2a7a4a;
+$accent-green-panel:  #111e15;  // zoom sliders bg
+
+// ── Panel header state tints ──────────────────────────────────────────────────
+$header-primary-bg:     #1a2e4a;
+$header-primary-border: #1e3f6a;
+$header-sound-bg:       #1a2e1a;
+$header-sound-border:   #1e4a1e;
+$header-both-bg:        #1a2a3a;
+$header-both-border:    #1e3a4a;
+
+// ── Badge — Primary ───────────────────────────────────────────────────────────
+$badge-primary-bg:            #1a2a3a;
+$badge-primary-border:        #1e3a5a;
+$badge-primary-color:         #3a7ab0;
+$badge-primary-active-bg:     #1a3a6a;
+$badge-primary-active-border: #2a5a9a;
+$badge-primary-active-color:  #6ab0ff;
+
+// ── Badge — Sound ─────────────────────────────────────────────────────────────
+$badge-sound-bg:            #1e2a1e;
+$badge-sound-border:        #2a3a2a;
+$badge-sound-color:         #4a7a4a;
+$badge-sound-active-bg:     #1a3a1a;
+$badge-sound-active-border: #2a6a2a;
+$badge-sound-active-color:  #6abf6a;
+
+// ── Spacing ───────────────────────────────────────────────────────────────────
+$space-1: 2px;
+$space-2: 4px;
+$space-3: 6px;
+$space-4: 8px;
+$space-5: 10px;
+$space-6: 12px;
+$space-8: 16px;
+
+// ── Border radius ─────────────────────────────────────────────────────────────
+$radius-sm:    3px;
+$radius-input: 4px;   // inputs, small dropdowns
+$radius-md:    5px;
+$radius-lg:    6px;
+
+// ── Typography ────────────────────────────────────────────────────────────────
+$font-family: system-ui, sans-serif;
+$font-size-xs:   9px;
+$font-size-sm:  10px;
+$font-size-md:  11px;
+$font-size-base: 12px;
+$font-size-lg:  13px;
+
+// ── Transitions ───────────────────────────────────────────────────────────────
+$t-fast: 0.12s;
+$t-base: 0.15s;
+$t-slow: 0.2s;
+
+// ── Shadows ───────────────────────────────────────────────────────────────────
+$shadow-dropdown: 0 6px 20px rgba(0, 0, 0, 0.5);
+$shadow-ball:     0 1px 4px rgba(0, 0, 0, 0.4);
+
+// ── Z-index ───────────────────────────────────────────────────────────────────
+$z-settings: 50;
+$z-menu:    100;
+
+// ── Semantic ──────────────────────────────────────────────────────────────────
+$color-danger: #e05555;

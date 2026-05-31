@@ -7,7 +7,7 @@ import FileMenu from './FileMenu.vue'
 // ── panel state ───────────────────────────────────────────────────────────────
 
 const panels = ref([
-  { id: 0, name: 'Video 1', isPrimary: true, hasSound: true, src: null, filename: null, offset: 0 },
+  { id: 0, name: 'Video 1', isPrimary: true, hasSound: true, src: null, offset: 0 },
 ])
 
 const primaryIdx = computed(() => panels.value.findIndex(p => p.isPrimary))
@@ -82,9 +82,8 @@ function onEnded() { isPlaying.value = false; stopSyncLoop() }
 async function onFileLoad(i, file) {
   const p = panels.value[i]
   if (p.src) URL.revokeObjectURL(p.src)
-  p.src      = URL.createObjectURL(file)
-  p.filename = file.name
-  p.name     = file.name.replace(/\.[^.]+$/, '')
+  p.src  = URL.createObjectURL(file)
+  p.name = file.name.replace(/\.[^.]+$/, '')
 
   await nextTick()
   const el = videoEl(i)
@@ -107,11 +106,10 @@ function addPanel() {
   if (panels.value.length >= 9) return
   panels.value.push({
     id:        nextId++,
-    name:      `Camera ${panels.value.length + 1}`,
+    name:      `Video ${panels.value.length + 1}`,
     isPrimary: false,
     hasSound:  false,
     src:       null,
-    filename:  null,
     offset:    0,
   })
 }
@@ -127,7 +125,6 @@ function removePanel(i) {
     panels.value.forEach((p, j) => { if (j !== i) p.offset -= shift })
     panels.value[newPrimaryI].isPrimary = true
     panels.value[newPrimaryI].offset    = 0
-    // update duration to new primary
     duration.value = videoEl(newPrimaryI)?.duration ?? 0
   }
 
@@ -239,7 +236,6 @@ function onPanelDragEnd() {
 const zoomActive = ref(false)
 const zoomLevel  = ref(2)
 const zoomRadius = ref(80)
-
 </script>
 
 <template>
@@ -257,7 +253,6 @@ const zoomRadius = ref(80)
         :is-primary="p.isPrimary"
         :has-sound="p.hasSound"
         :src="p.src"
-        :filename="p.filename"
         :offset="p.offset"
         :zoom-active="zoomActive"
         :zoom-level="zoomLevel"
@@ -295,40 +290,34 @@ const zoomRadius = ref(80)
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .player {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #0f0f0f;
-  color: #e8e8e8;
-  font-family: system-ui, sans-serif;
   overflow: hidden;
 }
 
 .topbar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 8px;
-  background: #181818;
-  border-bottom: 1px solid #2a2a2a;
+  @include flex-row($gap: $space-3);
+  padding: 5px $space-4;
+  background: $bg-surface;
+  border-bottom: 1px solid $border-subtle;
   min-height: 36px;
   flex-shrink: 0;
-}
-
-
-:deep(.panel--drag-over) {
-  outline: 2px solid #4a9eff;
-  outline-offset: -2px;
 }
 
 .panels {
   display: grid;
   grid-template-columns: repeat(var(--cols), 1fr);
-  gap: 6px;
+  gap: $space-3;
   flex: 1;
   min-height: 0;
-  padding: 6px 6px 8px;
+  padding: $space-3 $space-3 $space-4;
+}
+
+:deep(.panel--drag-over) {
+  outline: 2px solid $accent;
+  outline-offset: -2px;
 }
 </style>
